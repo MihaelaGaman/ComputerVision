@@ -97,9 +97,8 @@ def main():
 
     up_corners = []
 
-    for l in range(len(res)):
-        for c in range(len(res[i])):
-            
+    # for l in range(len(res)):
+    #     for c in range(len(res[i])):    
 
     print A, B, C, D
     lmax = min(len(f) - 1, B[0] + 1)
@@ -151,6 +150,32 @@ def main():
                         ok = True
                         res[i][j] = [255, 255, 255]
                         print i, j
+
+    # Sablon colt stanga sus
+    ul_mask = np.zeros(shape=(3,3))
+    ul_mask[0][0] = 255; ul_mask[0][1] = 255
+    ul_mask[0][2] = 255; ul_mask[1][0] = 255; ul_mask[2][0] = 255
+
+    # Sablon colt stanga jos
+    dl_mask = np.zeros(shape=(3,3))
+    dl_mask[0][0] = 255; dl_mask[1][0] = 255
+    dl_mask[2][0] = 255; dl_mask[2][1] = 255; dl_mask[2][2] = 255
+
+    # Sablon colt dreapta sus
+    ur_mask = np.zeros(shape=(3,3))
+    ur_mask[0][0] = 255; ur_mask[0][1] = 255
+    ur_mask[0][2] = 255; ur_mask[1][2] = 255; ur_mask[2][2] = 255
+
+    # Sablon colt dreapta jos
+    dr_mask = np.zeros(shape=(3,3))
+    dr_mask[0][2] = 255; dr_mask[1][2] = 255
+    dr_mask[2][2] = 255; dr_mask[2][1] = 255; dr_mask[2][0] = 255
+
+
+    print ul_mask
+    print dl_mask
+    print ur_mask
+    print dr_mask
 
 
     plt.imshow(f)
