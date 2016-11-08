@@ -140,14 +140,20 @@ def breadth(region):
 def ratio(region):
     l = length(region)
     b = breadth(region)
+
+    if l == 0 or b == 0:
+        return 0.0
+
     return float(b)/float(l)
 
 def eccen(region):
     l = length(region)
     b = breadth(region)
 
-    # if b > l:
-    #     return 0.0
+    #print "l = ", l, " b = ", b
+
+    if l == 0 or b == 0:
+        return 0.0
 
     return math.sqrt(float(abs(b*b - l*l))) / float(b)
 
@@ -158,12 +164,15 @@ def refine_by_form(img, regions):
     for label in regions:
         r = ratio(regions[label])
         e = eccen(regions[label])
-        print r, e
-        if r < 0.4 or r > 1.1:# or e < 0.25 or e > 0.97:
+
+        if r == 0.0 or e == 0.0 or r <= 1.3 or r >= 2.1 or e >= 0.87:
             del regs[label]
-            print "removed"
             for (i, j) in regions[label]:
                 res[i][j] = [0, 0, 0]
+        else:
+            print "label = ", label
+            print regions[label][0]
+            print "e = ", e, " r = ", r
 
     return res, regs
 
@@ -229,6 +238,33 @@ def get_corners_trial(res):
     return lmin, cmin, lmax, cmax
 
 
+def draw_box(img, region):
+    res = deepcopy(img)
+    lines = [l for (l, c) in region]
+    cols = [c for (l, c) in region]
+
+    lmin, lmax = min(lines), max(lines)
+    cmin, cmax = min(cols), max(cols)
+
+    for l in range(lmin, lmax):
+        res[l][cmin] = [0, 255, 0]
+        res[l][cmax] = [0, 255, 0]
+
+    for c in range(cmin, cmax):
+        res[lmin][c] = [0, 255, 0]
+        res[lmax][c] = [0, 255, 0]
+
+    return res
+
+def mark_faces(img, regions):
+    res = deepcopy(img)
+
+    for label in regions:
+        res = draw_box(res, regions[label])
+
+    return res
+
+
 def main():
     #file_img_name = 'dk_trainers.jpg'
     #file_img_name = 'junior_it_club.jpg'
@@ -280,14 +316,16 @@ def main():
 
 
         #res = remove_noise(res, lmin, cmin, lmax + 1, cmax + 1, 0, 255, 2)
-    
+    regions = find_connected(res)
     res, regions = refine_by_form(res, regions)
     # print len(regions2)
     # print "Regions 3: "
     # print len(regions3)
 
-    # plt.imshow(f)
-    # plt.show()
+    f = mark_faces(f, regions)
+
+    plt.imshow(f)
+    plt.show()
 
     plt.imshow(res)
     plt.show()
