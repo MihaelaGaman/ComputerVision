@@ -11,32 +11,55 @@ import math
 import random
 import copy
 
-# Select S points random (uniformly)
-def select_sample(all_points):
-	i1 = int(random.uniform(0, len(all_points)))
-	i2 = int(random.uniform(0, len(all_points)))
+'''
+Select S points random (uniformly)
+'''
+def select_samples(all_points, S):
+	samples = []
 
-	while i1 == i2:
-		i2 = int(np.random.uniform(0, len(all_points)))
+	for iter in range(S):
+		i = int(random.uniform(0, len(all_points)))
 
-	p1 = all_points[i1]
-	p2 = all_points[i2]
+		while len(samples) > 0 and all_points[i] in samples:
+			i = int(random.uniform(0, len(all_points)))
 
-	return p1, p2
+		samples.append(all_points[i])
 
-# Fit line to S points
-# Hough transform
-# S = 2
-def fit_line2(p1, p2):
+	return samples
+
+'''
+Fit line to S points
+Hough transform
+S = 2
+'''
+def fit_line2(samples):
 	m = 0
 	b = 0
-	print p1, p2
-	(x0, y0) = p1
-	(x1, y1) = p2
 
-	if abs(x1 - x0) != 0:
-		m = int(abs(y1 - y0) / abs(x1 - x0))
-		b = int(y0 - x0 * abs(y1 - y0) / abs(x1 - x0))
+	n = len(samples)
+	sx = 0
+	sy = 0
+	Sxy = 0
+	Sx2 = 0
+
+	# Compute x-es/y sum
+	for (x, y) in samples:
+		sx += x
+		sy += y
+
+	sx = sx / n
+	sy = sy / n
+
+	# Sxy = sum of( (x - sx)(y - sy))
+	# Sx2 = sum of((x - sx)^2)
+	for (x, y) in samples:
+		Sxy += (x - sx) * (y - sy)
+		Sx2 += (x - sx) * (x - sx)
+
+	if Sx2 != 0:
+		m = int(Sxy / Sx2)
+
+	b = int(sy - m * sx)
 
 	return m, b
 
@@ -70,8 +93,8 @@ def ransac(all_points, N, S, t, d):
 	lines = []
 	points = []
 	for iter in range(N):
-		p1, p2 = select_sample(all_points)
-		m, b = fit_line2(p1, p2)
+		samples = select_samples(all_points, S)
+		m, b = fit_line2(samples)
 		if m != 0 or b != 0:
 			inliers = find_inliers(all_points, (m, b), t)
 
@@ -79,7 +102,7 @@ def ransac(all_points, N, S, t, d):
 			if no_inliers >= d:
 				# Accept line
 				lines.append((m, b))
-				points.append((p1, p2))
+				points.append(samples)
 
 	return points, lines
 
@@ -104,9 +127,10 @@ def draw_lines(img, points, lines):
 	res = copy.deepcopy(img)
 
 	for k in range(len(points)):
-		(p1, p2) = points[k]
-		xmin = min(p1[0], p2[0]); xmax = max(p1[0], p2[0])
-		ymin = min(p1[1], p2[1]); ymax = max(p1[1], p2[1])
+		xes = [xi[0] for xi in points[k]]
+		yces = [yi[1] for yi in points[k]]
+		xmin = min(xes); xmax = max(xes)
+		ymin = min(yces); ymax = max(yces)
 
 		for l in range(xmin, xmax):
 			for c in range(ymin, ymax):
@@ -117,7 +141,7 @@ def draw_lines(img, points, lines):
 
 def main():
 	# image to be used
-	file_img_name = 'forrest.jpg'
+	file_img_name = 'urban4.jpg'
 
 	f = misc.face()
 	f = misc.imread(file_img_name)
@@ -130,9 +154,9 @@ def main():
 
 
 	# Parameters
-	N = 300
-	S = 2
-	t = 2
+	N = 100
+	S = 30
+	t = 1
 	d = 20
 
 	points, lines = ransac(whites, N, S, t, d)
