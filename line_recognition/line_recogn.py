@@ -14,18 +14,16 @@ import copy
 '''
 Select S points random (uniformly)
 '''
-def select_samples(all_points, S):
-	samples = []
+def select_samples(all_points, S, N):
+	samples = np.random.randint(0, len(all_points) - 1, (N, S))
+	samp_coords = []
 
-	for iter in range(S):
-		i = int(random.uniform(0, len(all_points)))
+	for i in range(len(samples)):
+		samp_coords.append([])
+		for j in range(len(samples[i])):
+			samp_coords[i].append(all_points[samples[i][j]])
 
-		while len(samples) > 0 and all_points[i] in samples:
-			i = int(random.uniform(0, len(all_points)))
-
-		samples.append(all_points[i])
-
-	return samples
+	return samp_coords
 
 '''
 Fit line to S points
@@ -92,9 +90,11 @@ def find_inliers(all_points, line, t):
 def ransac(all_points, N, S, t, d):
 	lines = []
 	points = []
+	samples_all = select_samples(all_points, S, N)
+
 	for iter in range(N):
-		samples = select_samples(all_points, S)
-		m, b = fit_line2(samples)
+		samp = samples_all[iter]
+		m, b = fit_line2(samp)
 		if m != 0 or b != 0:
 			inliers = find_inliers(all_points, (m, b), t)
 
@@ -102,7 +102,7 @@ def ransac(all_points, N, S, t, d):
 			if no_inliers >= d:
 				# Accept line
 				lines.append((m, b))
-				points.append(samples)
+				points.append(samp)
 
 	return points, lines
 
@@ -141,7 +141,7 @@ def draw_lines(img, points, lines):
 
 def main():
 	# image to be used
-	file_img_name = 'urban4.jpg'
+	file_img_name = 'lines.jpg'
 
 	f = misc.face()
 	f = misc.imread(file_img_name)
@@ -154,10 +154,16 @@ def main():
 
 
 	# Parameters
-	N = 100
-	S = 30
+	# p - probability that one random sample is free from outliers
+	p = 0.95
+	# e - inlier ratio
+	e = 0.5
+	S = 5
+	#N = abs(int(math.log(1 - p) / math.log(1-math.pow(1-e, S))))
+	N = 60
+
 	t = 1
-	d = 20
+	d = 100
 
 	points, lines = ransac(whites, N, S, t, d)
 	f = draw_lines(f, points, lines)
